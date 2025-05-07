@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor with a Pressure Transmitter Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e0f7fa;
+            color: #333;
+        }
+
+        header {
+            background-color: #00796b;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        h1, h2 {
+            margin: 0;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        .plant-overview {
+            text-align: center;
+        }
+
+        .graphic-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .tank, .motor, .controller {
+            width: 200px;
+            height: 100px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            border: 3px solid #00796b;
+            position: relative;
+            z-index: 1;
+            border-color: gray;
+            border-width: 20px;
+        }
+
+        .tank {
+            margin-right: 20px;
+        }
+
+        .liquid {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60%;
+            background-color: #4caf50;
+            border-radius: 0 0 5px 5px;
+            transition: height 0.05s ease;
+        }
+
+        .pressure-transmitter {
+            position: absolute;
+            top: 20px;
+            left: 7px;
+            background-color: #00796b;
+            color: #fff;
+            padding: 3px;
+            border-radius: 3px;
+            margin-left: 13%;
+        }
+
+        .pipe {
+            padding: 0.5%;
+            background-color: gray;
+            border-radius: 2px;
+            position: absolute;
+            top: 75%;
+            z-index: 2;
+            width: 167px;
+            margin-right: 133px;
+        }
+
+        .pipe-flow {
+            padding: 0.5%;
+            background-color: #4caf50;
+            border-radius: 2px;
+            position: absolute;
+            top: 75%;
+            transform: translateY(-20%);
+            z-index: 2;
+            width: 195px;
+            margin-right: 115px;
+        }
+
+        .motor {
+            background-color: #ff5722;
+            display: flex;
+            margin-inline: 10%;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            border-color: gray;
+        }
+
+        .motor.on {
+            background-color: #4caf50;
+        }
+
+        .motor-status {
+            margin-top: 5px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .control-panels-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            margin-right: 20%;
+        }
+
+        .control-panel {
+            padding: 5px;
+            background-color: #f1f1f1;
+            border-radius: 8px;
+            width: 45%;
+        }
+
+        .control-panel h3 {
+            margin-bottom: 5px;
+        }
+
+        .control-panel button {
+            padding: 3px 5px;
+            margin: 2px;
+            background-color: #00796b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .control-panel button:hover {
+            background-color: #004d40;
+        }
+
+        footer {
+            background-color: #00796b;
+            color: #fff;
+            text-align: center;
+            padding: 2px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .warning {
+            color: red;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .warning-message {
+            font-size: 1.5em;
+            color: red;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MOTOR AND PRESSUER CONTROLLER </h1>
+        
+    </header>
+
+    <main>
+        <section class="plant-overview">
+            <h2>Plant Overview</h2>
+            <div class="graphic-container">
+                <div class="tank">
+                    <div class="liquid" id="liquid-level"></div>
+                    <div class="pressure-transmitter">
+                        <p>Pressure: <span id="pressure-level">1.2 atm</span></p>
+                    </div>
+                </div>
+                <div class="pipe pipe-tank" id="pipe-tank"></div>
+                <div class="motor" id="motor">
+                    <p id="motor-status-text">Motor: OFF</p>
+                </div>
+                <div class="pipe-flow" id="pipe-flow"></div>
+            </div>
+
+            <div class="control-panels-container">
+                <div class="control-panel">
+                    <h3>Pressure Control Panel</h3>
+                    <button onclick="increasePressure()">Increase Pressure</button>
+                    <button onclick="decreasePressure()">Decrease Pressure</button>
+                    <p>High Limit: 2.5 atm | Low Limit: 1.0 atm</p>
+                    <p id="control-status">Control Status: Stable</p>
+                </div>
+                <div class="control-panel">
+                    <h3>Pressure Control Panel</h3>
+                    <p>High Limit: 2.5 atm | Low Limit: 1.0 atm</p>
+                    <button onclick="setPressure(0.25)">Set to 25%</button>
+                    <button onclick="setPressure(0.5)">Set to 50%</button>
+                    <button onclick="setPressure(0.75)">Set to 75%</button>
+                    <button onclick="setPressure(1.0)">Set to 100%</button>
+                    <p id="control-status">Control Status: Stable</p>
+                </div>
+
+                <div class="control-panel">
+                    <h3>Motor Control Panel</h3>
+                    <button onclick="startMotor()">Start Motor</button>
+                    <button onclick="stopMotor()">Stop Motor</button>
+                    <p id="motor-status">Motor Status: OFF</p>
+                </div>
+            </div>
+            <div id="warning-message" class="warning-message" style="display: none;">Maximum Pressure or Liquid Level Reached</div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Smart Factory Automation System - Food Processing Plant</p>
+    </footer>
+
+    <script>
+        let liquidLevel = 60; 
+        let pressure = 1.5;   
+        let motorRunning = false;
+        const maxPressure = 2.5; // Maximum pressure in atm
+
+    function setPressure(percentage) {
+        pressure = maxPressure * percentage;
+        liquidLevel = percentage * 95; // Assume liquid level corresponds directly to pressure percentage
+        updateDisplay();
+        updateControlStatus(`Set Pressure to ${Math.round(percentage * 100)}%`);
+        checkMotorStatus();
+        if (percentage >= 0.95) {
+            document.getElementById("warning-message").style.display = "block";
+        } else {
+            document.getElementById("warning-message").style.display = "none";
+        }
+    }
+
+        function increasePressure() {
+            if (liquidLevel < 95 && pressure < 2.5) {
+                liquidLevel += 10;
+                pressure += 0.2;
+                updateDisplay();
+                updateControlStatus('Increasing Pressure');
+                checkMotorStatus();
+            } else {
+                showWarning('Maximum Pressure or Liquid Level Reached');
+            }
+        }
+
+        function decreasePressure() {
+            if (liquidLevel > 10 && pressure > 1.0) {
+                liquidLevel -= 10;
+                pressure -= 0.2;
+                updateDisplay();
+                updateControlStatus('Decreasing Pressure');
+                checkMotorStatus();
+            } else {
+                showWarning('Minimum Pressure or Liquid Level Reached');
+            }
+        }
+
+        function startMotor() {
+            motorRunning = true;
+            updateMotorDisplay();
+        }
+
+        function stopMotor() {
+            motorRunning = false;
+            updateMotorDisplay();
+        }
+
+        function showWarning(message) {
+            const controlStatus = document.getElementById('control-status');
+            controlStatus.innerHTML = `<span class="warning">${message}</span>`;
+            stopMotor();
+        }
+
+        function updateDisplay() {
+            document.getElementById('liquid-level').style.height = liquidLevel + '%';
+            document.getElementById('pressure-level').textContent = pressure.toFixed(1) + ' atm';
+        }
+
+        function updateControlStatus(message) {
+            document.getElementById('control-status').textContent = 'Control Status: ' + message;
+        }
+
+        function updateMotorDisplay() {
+            const motor = document.getElementById('motor');
+            const motorStatusText = document.getElementById('motor-status-text');
+            const motorStatus = document.getElementById('motor-status');
+            const pipeFlow = document.getElementById('pipe-flow');
+
+            if (motorRunning) {
+                motor.classList.add('on');
+                motorStatusText.textContent = 'Motor: ON';
+                motorStatus.textContent = 'Motor Status: ON';
+                pipeFlow.style.height = '3px';
+                document.getElementById('pipe-flow').style.width = '200px';
+            } else {
+                motor.classList.remove('on');
+                motorStatusText.textContent = 'Motor: OFF';
+                motorStatus.textContent = 'Motor Status: OFF';
+                pipeFlow.style.height = '0';
+                document.getElementById('pipe-flow').style.width = '0';
+            }
+        }
+
+        function checkMotorStatus() {
+            if (pressure >= 2.0) {
+                startMotor();
+            } else if (pressure <= 1.0) {
+                stopMotor();
+                showWarning('Pressure Below Minimum Threshold! Motor Stopped.');
+            }
+        }
+
+        updateDisplay();
+        updateMotorDisplay();
+    </script>
+</body>
+</html>
